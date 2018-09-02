@@ -9,6 +9,8 @@ import java.io.StringWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ServiceLoader;
+import java.util.Vector;
+import java.util.stream.Collectors;
 
 import javax.swing.border.EmptyBorder;
 import javax.swing.JButton;
@@ -91,11 +93,12 @@ public final class MainFrame extends JFrame {
 
 	private JComponent createServicesComponent() {
 		final var serviceLoader = ServiceLoader.load(GreetingsHandler.class);
-		final var services = serviceLoader.stream().toArray(GreetingsHandler[]::new);
+		final var serviceProviders = serviceLoader.stream().collect(Collectors.toCollection(Vector::new));
 
 		final var servicesLabel = new JLabel("Available service implementations:");
-		final var servicesComboBox = new JComboBox<GreetingsHandler>(services);
+		final var servicesComboBox = new JComboBox<ServiceLoader.Provider<GreetingsHandler>>(serviceProviders);
 		servicesLabel.setLabelFor(servicesComboBox);
+		servicesComboBox.setRenderer(new ServiceProviderListCellRenderer<GreetingsHandler>());
 		if (servicesComboBox.getItemCount() > 0) servicesComboBox.setSelectedIndex(0);
 
 		final var messageLabel = new JLabel("Message:");
@@ -103,7 +106,7 @@ public final class MainFrame extends JFrame {
 		messageLabel.setLabelFor(messageTextField);
 
 		final var sendButton = new JButton("Send Message");
-		sendButton.addActionListener(e -> sendMessage((GreetingsHandler) servicesComboBox.getSelectedItem(), messageTextField.getText()));
+		sendButton.addActionListener(e -> sendMessage((ServiceLoader.Provider<GreetingsHandler>) servicesComboBox.getSelectedItem(), messageTextField.getText()));
 
 		final var panel = new JPanel(new GridBagLayout());
 		panel.setBorder(new EmptyBorder(8, 8, 8, 8));
@@ -116,9 +119,10 @@ public final class MainFrame extends JFrame {
 		return panel;
 	}
 
-	private void sendMessage(final GreetingsHandler service, final String message) {
-		if (service != null) {
+	private void sendMessage(final ServiceLoader.Provider<GreetingsHandler> serviceProvider, final String message) {
+		if (serviceProvider != null) {
 			final var greetings = Greetings.createMessage(message).withSource(getTitle());
+			final var service = serviceProvider.get(); 
 			service.sendGreetings(greetings);
 		}
 	}

@@ -20,10 +20,17 @@
     <modules>
         <module>application</module>
 		<module>greetings</module>
+		<module>console</module>
     </modules>
 
     <build>
 		<plugins>
+					
+			<!-- Use newer version of compiler to ensure the module dependency is found -->
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.0</version>
+			</plugin>
 
 			<!-- minimum requirements for Java and Maven -->
 			<plugin>

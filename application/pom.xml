@@ -22,12 +22,6 @@
 
     <build>
 		<plugins>
-			
-			<!-- Use newer version of compiler to ensure the module dependency is found -->
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.0</version>
-			</plugin>
 
 			<!-- perform some additional tasks (Maven does not support this yet) -->
 			<plugin>
@@ -80,13 +74,14 @@
 							<target>
 								<exec executable="${java.home}/bin/jlink"
 									failonerror="true">
-									<!-- path to modules -->
+
+									<!-- path to all the modules -->
 									<arg value="-p" />
-									<arg value="${project.build.directory}/release;${project.basedir}/../greetings/target/release" />
+									<arg value="${project.build.directory}/release;${project.basedir}/../greetings/target/release;${project.basedir}/../console/target/release" />
 
 									<!-- name(s) of root module(s) -->
 									<arg value="--add-modules" />
-									<arg value="name.ulbricht.jigsaw.application" />
+									<arg value="name.ulbricht.jigsaw.application,name.ulbricht.jigsaw.console" />
 
 									<!-- target folder for the runimage -->
 									<arg value="--output" />

@@ -1,4 +1,5 @@
 .vscode
 .project
 application/target
+console/target
 greetings/target
