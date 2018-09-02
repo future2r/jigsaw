@@ -7,6 +7,12 @@ module name.ulbricht.jigsaw.application {
 	// JAXB API (deprecated module, must be replaced with Java 11)
 	requires java.xml.bind;
 
+	// service API
+	requires name.ulbricht.jigsaw.greetings;
+
+	// declare to use services
+	uses name.ulbricht.jigsaw.greetings.GreetingsHandler;
+
 	// export the root package only
 	exports name.ulbricht.jigsaw.application;
 
