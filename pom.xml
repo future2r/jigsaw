@@ -19,6 +19,7 @@
 
     <modules>
         <module>application</module>
+		<module>greetings</module>
     </modules>
 
     <build>
