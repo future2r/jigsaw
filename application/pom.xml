@@ -77,11 +77,12 @@
 
 									<!-- path to all the modules -->
 									<arg value="-p" />
-									<arg value="${project.build.directory}/release;${project.basedir}/../greetings/target/release;${project.basedir}/../console/target/release" />
+									<arg value="${project.build.directory}/release;${project.basedir}/../greetings/target/release;${project.basedir}/../console/target/release;;${project.basedir}/../msgbox/target/release" />
 
 									<!-- name(s) of root module(s) -->
+									<!-- include those, we have no implicit dependency to -->
 									<arg value="--add-modules" />
-									<arg value="name.ulbricht.jigsaw.application,name.ulbricht.jigsaw.console" />
+									<arg value="name.ulbricht.jigsaw.application,name.ulbricht.jigsaw.console,name.ulbricht.jigsaw.msgbox" />
 
 									<!-- target folder for the runimage -->
 									<arg value="--output" />

@@ -91,6 +91,7 @@ public final class MainFrame extends JFrame {
 		return new JScrollPane(textArea);
 	}
 
+	@SuppressWarnings("unchecked")
 	private JComponent createServicesComponent() {
 		final var serviceLoader = ServiceLoader.load(GreetingsHandler.class);
 		final var serviceProviders = serviceLoader.stream().collect(Collectors.toCollection(Vector::new));

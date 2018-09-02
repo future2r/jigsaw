@@ -21,6 +21,7 @@
         <module>application</module>
 		<module>greetings</module>
 		<module>console</module>
+		<module>msgbox</module>
     </modules>
 
     <build>
