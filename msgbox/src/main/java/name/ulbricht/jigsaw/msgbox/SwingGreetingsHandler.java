@@ -7,8 +7,7 @@ import javax.swing.JOptionPane;
 
 public final class SwingGreetingsHandler implements GreetingsHandler {
 
-    public void sendGreetings(final Greetings greetings) {
-        JOptionPane.showMessageDialog(null, greetings.getMessage(), greetings.getSource(), JOptionPane.INFORMATION_MESSAGE);
-    }
-
+	public void sendGreetings(final Greetings greetings) {
+		JOptionPane.showMessageDialog(null, greetings.getMessage(), greetings.getSource(), JOptionPane.INFORMATION_MESSAGE);
+	}
 }

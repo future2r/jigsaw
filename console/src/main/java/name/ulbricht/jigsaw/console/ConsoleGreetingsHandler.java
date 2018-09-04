@@ -5,8 +5,8 @@ import name.ulbricht.jigsaw.greetings.GreetingsHandler;
 
 public final class ConsoleGreetingsHandler implements GreetingsHandler {
 
-    public void sendGreetings(final Greetings greetings) {
-        System.out.print(String.format("At %s %s said: %s%n", greetings.getTime(), greetings.getSource(), greetings.getMessage()));
-    }
+	public void sendGreetings(final Greetings greetings) {
+		System.out.print(String.format("At %s %s said: %s%n", greetings.getTime(), greetings.getSource(), greetings.getMessage()));
+	}
 
 }
