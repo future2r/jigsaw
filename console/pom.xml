@@ -14,9 +14,9 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>name.ulbricht.jigsaw</groupId>
+			<groupId>${project.groupId}</groupId>
 			<artifactId>greetings</artifactId>
-			<version>1.0.0</version>
+			<version>${project.version}</version>
 		</dependency>
 	</dependencies>
 

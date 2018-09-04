@@ -21,3 +21,7 @@ After the Maven build (`mvn clean poackage`) has completed successfully you will
 As soon as Java 11 is final released I will try to update this project to use an alternative to the current JAXB implementation.
 
 Thanks to [qualitype](http://qualitype.de) for inspiration.
+
+## To do
+* Set a version number for the non-application modules too. For now it looks like specifying a main class is required by the `jar` tool. But those modules have no main class...
+* Update to Open JDK 11 and use an alternative JAXB implementation.

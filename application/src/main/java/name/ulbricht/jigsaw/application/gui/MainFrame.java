@@ -71,7 +71,7 @@ public final class MainFrame extends JFrame {
 
 	private static JComponent createJAXBComponent() {
 		final var text = new StringBuilder();
-		text.append("This application demonstrates the usage of JAXB as an optional module.\n\n");
+		text.append("This application demonstrates the usage of JAXB as a deprecated module.\n\n");
 
 		final var persons = new Persons();
 		persons.getPersons().add(new Person(42, "John", "Smith"));
