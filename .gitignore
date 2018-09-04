@@ -1,5 +1,6 @@
 .vscode
 .project
+.settings
 application/target
 console/target
 greetings/target
