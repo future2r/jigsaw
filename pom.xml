@@ -11,9 +11,9 @@
 	<version>1.0.0</version>
 
 	<properties>
-		<maven.compiler.release>10</maven.compiler.release>
-		<maven.compiler.source>10</maven.compiler.source>
-		<maven.compiler.target>10</maven.compiler.target>
+		<maven.compiler.release>11</maven.compiler.release>
+		<maven.compiler.source>11</maven.compiler.source>
+		<maven.compiler.target>11</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
@@ -50,7 +50,7 @@
 									<version>[3.5.3,)</version>
 								</requireMavenVersion>
 								<requireJavaVersion>
-									<version>10</version>
+									<version>11</version>
 								</requireJavaVersion>
 							</rules>
 						</configuration>

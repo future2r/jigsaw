@@ -7,7 +7,7 @@ Demonstrates the usage of Java module system.
 ### application
 This is a modularized Swing application that uses some services.
 In the user interface this application features a graphical module browser.
-It also uses the now deprected JAXB to demonstrate how to use an alternative.
+It also uses JAXB (which was deprected in Java 9 and removed in Java 11) to demonstrate how to use an alternative.
 ### greetings
 This modules defines a service API that is used by the application to find implementing services.
 ### console
@@ -26,4 +26,3 @@ Thanks to [qualitype](http://qualitype.de) for inspiration.
 
 ## To do
 * Set a version number for the non-application modules too. For now it looks like specifying a main class is required by the `jar` tool. But those modules have no main class... [see](https://bugs.openjdk.java.net/browse/JDK-8210454)
-* Update to Open JDK 11 and use an alternative JAXB implementation. [see](http://jdk.java.net/11)
