@@ -1,15 +1,5 @@
 .vscode
 .project
 .settings
-
-application/.classpath
-application/target
-
-console/.classpath
-console/target
-
-greetings/.classpath
-greetings/target
-
-msgbox/.classpath
-msgbox/target
+.classpath
+target
