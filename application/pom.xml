@@ -18,10 +18,47 @@
 			<artifactId>greetings</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+
+		<!-- JAXB is no part of the JRE anymore, use an alternative -->
+
+		<!-- JAXB API -->
+		<dependency>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<version>2.3.0</version>
+		</dependency>
+
+		<!-- module dependecy from JAXB API -->
+		<dependency>
+			<groupId>javax.activation</groupId>
+			<artifactId>javax.activation-api</artifactId>
+			<version>1.2.0</version>
+		</dependency>
 	</dependencies>
 
     <build>
 		<plugins>
+
+			<!-- copy the 3rd party dependencies to the release folder to get picked up by jlink later-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>3.1.1</version>
+				<executions>
+					<execution>
+					<id>copy-additional-dependencies</id>
+					<phase>package</phase>
+					<goals>
+						<goal>copy-dependencies</goal>
+					</goals>
+					<configuration>
+						<includeScope>compile</includeScope>
+						<excludeArtifactIds>greetings</excludeArtifactIds>
+						<outputDirectory>${project.build.directory}/release</outputDirectory>
+					</configuration>
+				</execution>
+			</executions>
+			</plugin>
 
 			<!-- perform some additional tasks (Maven does not support this yet) -->
 			<plugin>
