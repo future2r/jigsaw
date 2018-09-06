@@ -1,6 +1,8 @@
 # Jigsaw
 Demonstrates the usage of Java module system
 
+![Module browser](doc/module_browser.png "Module browser") 
+
 ## Modules
 ### application
 This is a modularized Swing application that uses some services.
