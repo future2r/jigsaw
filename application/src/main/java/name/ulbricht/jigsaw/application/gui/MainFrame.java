@@ -110,6 +110,7 @@ public final class MainFrame extends JFrame {
 		sendButton.addActionListener(e -> sendMessage((ServiceLoader.Provider<GreetingsHandler>) servicesComboBox.getSelectedItem(), messageTextField.getText()));
 
 		final var panel = new JPanel(new GridBagLayout());
+		panel.setOpaque(false);
 		panel.setBorder(new EmptyBorder(8, 8, 8, 8));
 		panel.add(servicesLabel, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
 		panel.add(servicesComboBox, new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 0, 0));
