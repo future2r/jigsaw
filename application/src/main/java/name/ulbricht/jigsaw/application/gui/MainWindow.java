@@ -5,13 +5,12 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.Toolkit;
+import java.awt.LayoutManager;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.ServiceLoader;
-import java.util.Vector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -31,6 +30,7 @@ import javax.swing.JTree;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
+import javax.xml.bind.DataBindingException;
 import javax.xml.bind.JAXB;
 
 import name.ulbricht.jigsaw.application.xml.Person;
@@ -38,7 +38,6 @@ import name.ulbricht.jigsaw.application.xml.Persons;
 import name.ulbricht.jigsaw.greetings.Greetings;
 import name.ulbricht.jigsaw.greetings.GreetingsHandler;
 
-@SuppressWarnings("serial")
 public final class MainWindow extends JFrame {
 
 	private static final Logger log = Logger.getLogger(MainWindow.class.getPackageName());
@@ -48,39 +47,46 @@ public final class MainWindow extends JFrame {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
 				| UnsupportedLookAndFeelException ex) {
-			log.log(Level.SEVERE, ex, () -> ex.getMessage());
+			log.log(Level.SEVERE, ex, ex::getMessage);
 		}
 
-		final var mainWindow = new MainWindow();
-		mainWindow.setVisible(true);
+		new MainWindow().setVisible(true);
+	}
+
+	private static final class ControlPanel extends JPanel {
+
+		ControlPanel(final LayoutManager layout) {
+			super(layout);
+			setOpaque(false);
+			setBorder(new EmptyBorder(8, 8, 8, 8));
+		}
 	}
 
 	private MainWindow() {
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		setTitle("Jigsaw Application");
 		setIconImages(IntStream.of(16, 24, 32, 48, 64, 128, 256, 512) //
-			.mapToObj(size -> String.format("app%s.png", Integer.toString(size))) //
-			.map(name -> getClass().getResource(name)) //
-			.map(url -> Toolkit.getDefaultToolkit().createImage(url)) //
+			.mapToObj(size -> "app" + size + ".png") //
+			.map(Resources::getImage) //
 			.collect(Collectors.toList()));
-		setLayout(new BorderLayout());
 		setBackground(UIManager.getColor("TabbedPane.background"));
-		getRootPane().setBorder(new EmptyBorder(4, 4, 4, 4));
-		
+
 		final var tabbedPane = new JTabbedPane();
-		tabbedPane.addTab("Modules", createModulesComponent());
-		tabbedPane.addTab("Services", createServicesComponent());
-		tabbedPane.addTab("JAXB", createJAXBComponent());
-		tabbedPane.addTab("Properties", createSystemPropertiesComponent());
+		tabbedPane.addTab("Modules", Resources.getIcon("modules.png"), createModulesComponent());
+		tabbedPane.addTab("Services", Resources.getIcon("interfaces.png"), createServicesComponent());
+		tabbedPane.addTab("JAXB", Resources.getIcon("xml.png"), createJAXBComponent());
+		tabbedPane.addTab("Properties", Resources.getIcon("property.png"), createPropertiesComponent());
 
-		add(tabbedPane, BorderLayout.CENTER);
-
-		final var buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-		buttonPanel.setOpaque(false);
 		final var closeButton = new JButton("Close");
 		closeButton.addActionListener(e -> dispose());
+
+		final var buttonPanel = new ControlPanel(new FlowLayout(FlowLayout.RIGHT));
 		buttonPanel.add(closeButton);
-		add(buttonPanel, BorderLayout.SOUTH);
+
+		final var contentPane = new ControlPanel(new BorderLayout());
+		contentPane.add(tabbedPane, BorderLayout.CENTER);
+		contentPane.add(buttonPanel, BorderLayout.SOUTH);
+		setContentPane(contentPane);
 
 		pack();
 		setLocationByPlatform(true);
@@ -95,19 +101,18 @@ public final class MainWindow extends JFrame {
 		try (final var sw = new StringWriter()) {
 			JAXB.marshal(persons, sw);
 			xml = sw.toString();
-		} catch (final IOException ex) {
-			log.log(Level.SEVERE, ex, () -> ex.getMessage());
+		} catch (final IOException | DataBindingException ex) {
+			log.log(Level.SEVERE, ex, ex::getMessage);
 			xml = ex.getMessage();
 		}
 
-		final var descrLabel = new JLabel("Using the deprected JAXB module:");
 		final var textArea = new JTextArea(xml);
-		descrLabel.setLabelFor(textArea);
 		textArea.setEditable(false);
-		
-		final var panel = new JPanel(new BorderLayout(0, 8));
-		panel.setOpaque(false);
-		panel.setBorder(new EmptyBorder(8, 8, 8, 8));
+
+		final var descrLabel = new JLabel("Using the deprected JAXB module:");
+		descrLabel.setLabelFor(textArea);
+
+		final var panel = new ControlPanel(new BorderLayout(0, 8));
 		panel.add(descrLabel, BorderLayout.NORTH);
 		panel.add(new JScrollPane(textArea), BorderLayout.CENTER);
 
@@ -116,25 +121,23 @@ public final class MainWindow extends JFrame {
 
 	@SuppressWarnings("unchecked")
 	private JComponent createServicesComponent() {
-		final var serviceLoader = ServiceLoader.load(GreetingsHandler.class);
-		final var serviceProviders = serviceLoader.stream().collect(Collectors.toCollection(Vector::new));
-
-		final var servicesLabel = new JLabel("Services:");
-		final var servicesComboBox = new JComboBox<ServiceLoader.Provider<GreetingsHandler>>(serviceProviders);
-		servicesLabel.setLabelFor(servicesComboBox);
+		final var servicesComboBox = new JComboBox<ServiceLoader.Provider<GreetingsHandler>>(new ServiceProviderComboBoxModel());
 		servicesComboBox.setRenderer(new ServiceProviderListCellRenderer<GreetingsHandler>());
 		if (servicesComboBox.getItemCount() > 0) servicesComboBox.setSelectedIndex(0);
 
-		final var messageLabel = new JLabel("Message:");
+		final var servicesLabel = new JLabel("Services:");
+		servicesLabel.setLabelFor(servicesComboBox);
+
 		final var messageTextField = new JTextField("Hello World!");
+
+		final var messageLabel = new JLabel("Message:");
 		messageLabel.setLabelFor(messageTextField);
 
 		final var sendButton = new JButton("Send Message");
-		sendButton.addActionListener(e -> sendMessage((ServiceLoader.Provider<GreetingsHandler>) servicesComboBox.getSelectedItem(), messageTextField.getText()));
+		sendButton.addActionListener(e -> ((ServiceProviderComboBoxModel) servicesComboBox.getModel()).getSelectedProvider() //
+			.ifPresent(p -> sendMessage(p, messageTextField.getText())));
 
-		final var panel = new JPanel(new GridBagLayout());
-		panel.setOpaque(false);
-		panel.setBorder(new EmptyBorder(8, 8, 8, 8));
+		final var panel = new ControlPanel(new GridBagLayout());
 		panel.add(servicesLabel, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
 		panel.add(servicesComboBox, new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 0, 0));
 		panel.add(messageLabel, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
@@ -146,35 +149,31 @@ public final class MainWindow extends JFrame {
 
 	private void sendMessage(final ServiceLoader.Provider<GreetingsHandler> serviceProvider, final String message) {
 		if (serviceProvider != null) {
-			final var greetings = Greetings.createMessage(message).withSource(getTitle());
-			final var service = serviceProvider.get(); 
-			service.sendGreetings(greetings);
+			serviceProvider.get().sendGreetings(Greetings.createMessage(message).withSource(getTitle()));
 		}
 	}
 
 	private static JComponent createModulesComponent() {
-		final var descrLabel = new JLabel("Currently available Java modules:");
 		final var tree = new JTree(new ModulesTreeModel());
 		tree.setCellRenderer(new ModulesTreeCellRenderer());
+
+		final var descrLabel = new JLabel("Currently available Java modules:");
 		descrLabel.setLabelFor(tree);
 
-		final var panel = new JPanel(new BorderLayout(0, 8));
-		panel.setOpaque(false);
-		panel.setBorder(new EmptyBorder(8, 8, 8, 8));
+		final var panel = new ControlPanel(new BorderLayout(0, 8));
 		panel.add(descrLabel, BorderLayout.NORTH);
 		panel.add(new JScrollPane(tree), BorderLayout.CENTER);
 
 		return panel;
 	}
 
-	private static JComponent createSystemPropertiesComponent() {
-		final var descrLabel = new JLabel("Currenty set Java system properties:");
+	private static JComponent createPropertiesComponent() {
 		final var table = new JTable(new SystemPropertiesTableModel());
+
+		final var descrLabel = new JLabel("Currenty set Java system properties:");
 		descrLabel.setLabelFor(table);
 
-		final var panel = new JPanel(new BorderLayout(0, 8));
-		panel.setOpaque(false);
-		panel.setBorder(new EmptyBorder(8, 8, 8, 8));
+		final var panel = new ControlPanel(new BorderLayout(0, 8));
 		panel.add(descrLabel, BorderLayout.NORTH);
 		panel.add(new JScrollPane(table), BorderLayout.CENTER);
 
