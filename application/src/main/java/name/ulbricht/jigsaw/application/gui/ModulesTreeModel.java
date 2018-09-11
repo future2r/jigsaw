@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.swing.Icon;
 import javax.swing.event.EventListenerList;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
@@ -23,9 +24,14 @@ import javax.swing.tree.TreePath;
 final class ModulesTreeModel implements TreeModel {
 
 	private static final Logger log = Logger.getLogger(ModulesTreeModel.class.getPackageName());
+	private static final Resources resources = Resources.of("ModulesTreeModel");
 
 	enum NodeType {
-		MODULES, MODULE, PACKAGES, PACKAGE, INTERFACES, INTERFACE, CLASSES, CLASS, PROPERTY;
+		MODULES, MODULE, PACKAGES, PACKAGE, SERVICES, SERVICE, CLASSES, CLASS, PROPERTY;
+
+		Icon getIcon() {
+			return resources.getIcon("Node." + name() + ".icon");
+		}
 	}
 
 	static final class Node<T> {
@@ -64,51 +70,34 @@ final class ModulesTreeModel implements TreeModel {
 		}
 
 		int getChildCount() {
-			return getChildren() //
-					.map(List::size) //
-					.orElse(Integer.valueOf(0)).intValue();
+			return getChildren().map(List::size).orElse(Integer.valueOf(0)).intValue();
 		}
 
 		Node<?> getChild(final int index) {
-			return getChildren(). //
-					map(c -> c.get(index)) //
-					.orElse(null);
+			return getChildren().map(c -> c.get(index)).orElse(null);
 		}
 
 		int getIndexOfChild(final Node<?> child) {
-			return getChildren() //
-					.map(c -> Integer.valueOf(c.indexOf(child))) //
-					.orElse(Integer.valueOf(-1)).intValue();
+			return getChildren().map(c -> Integer.valueOf(c.indexOf(child))).orElse(Integer.valueOf(-1)).intValue();
 		}
 
 		private Optional<List<Node<?>>> getChildren() {
 			if (this.children == null && this.childrenFunction != null) {
-				this.children = this.childrenFunction.apply(this.data) //
-						.collect(Collectors.toList());
+				this.children = this.childrenFunction.apply(this.data).collect(Collectors.toList());
 			}
 			return Optional.ofNullable(this.children);
 		}
 	}
 
 	private enum Property {
-		AUTOMATIC("automatic: %s"), //
-		OPEN("open: %s"), //
-		VERSION("version: %s"), //
-		MAIN_CLASS("main class: %s"), //
-		QUALIFIED("qualified: %s");
-
-		private final String namePattern;
-
-		Property(final String namePattern) {
-			this.namePattern = namePattern;
-		}
+		AUTOMATIC, OPEN, VERSION, MAIN_CLASS, QUALIFIED;
 
 		String createName(final boolean value) {
-			return createName(value ? "yes" : "no");
+			return createName(resources.getString("Property." + value));
 		}
 
 		String createName(final String value) {
-			return String.format(this.namePattern, value);
+			return String.format(resources.getString("Property." + name() + ".pattern"), value);
 		}
 	}
 
@@ -163,103 +152,92 @@ final class ModulesTreeModel implements TreeModel {
 		log.info(() -> "Reading modules");
 
 		final var moduleLayer = ModuleLayer.boot();
-		return new Node<>(NodeType.MODULES, moduleLayer, ml -> "Modules", //
-				ml -> ml.modules().stream() //
-						.map(Module::getDescriptor) //
-						.sorted() //
+		return new Node<>(NodeType.MODULES, moduleLayer, ml -> resources.getString("modules"),
+				ml -> ml.modules().stream()
+						.map(Module::getDescriptor)
+						.sorted()
 						.map(ModulesTreeModel::createModuleNode));
 	}
 
 	private static Node<ModuleDescriptor> createModuleNode(final ModuleDescriptor moduleDescriptor) {
-		return new Node<>(NodeType.MODULE, moduleDescriptor, ModuleDescriptor::name, //
-				md -> Stream.of( //
-						new Node<>(NodeType.PROPERTY, Property.AUTOMATIC,
-								p -> p.createName(moduleDescriptor.isAutomatic())), //
-						new Node<>(NodeType.PROPERTY, Property.OPEN, p -> p.createName(moduleDescriptor.isOpen())), //
-						new Node<>(NodeType.PROPERTY, Property.VERSION,
-								p -> p.createName(moduleDescriptor.version().map(Object::toString).orElse(""))), //
-						new Node<>(NodeType.PROPERTY, Property.MAIN_CLASS,
-								p -> p.createName(moduleDescriptor.mainClass().orElse(""))), //
-						new Node<>(NodeType.MODULES, moduleDescriptor, md2 -> "required modules",
-								ModulesTreeModel::createRequiresNodes), //
-						new Node<>(NodeType.PACKAGES, moduleDescriptor, md2 -> "exported packages",
-								ModulesTreeModel::createExportsNodes), //
-						new Node<>(NodeType.PACKAGES, moduleDescriptor, md2 -> "opened packages",
-								ModulesTreeModel::createOpensNodes), //
-						new Node<>(NodeType.INTERFACES, moduleDescriptor, md2 -> "provided services",
-								ModulesTreeModel::createProvidesNodes), //
-						new Node<>(NodeType.INTERFACES, moduleDescriptor, md2 -> "used services",
-								ModulesTreeModel::createUsesNodes) //
+		return new Node<>(NodeType.MODULE, moduleDescriptor, ModuleDescriptor::name,
+				md -> Stream.of(
+						new Node<>(NodeType.PROPERTY, Property.AUTOMATIC, p -> p.createName(moduleDescriptor.isAutomatic())),
+						new Node<>(NodeType.PROPERTY, Property.OPEN, p -> p.createName(moduleDescriptor.isOpen())),
+						new Node<>(NodeType.PROPERTY, Property.VERSION,	p -> p.createName(moduleDescriptor.version().map(Object::toString).orElse(""))),
+						new Node<>(NodeType.PROPERTY, Property.MAIN_CLASS, p -> p.createName(moduleDescriptor.mainClass().orElse(""))),
+						new Node<>(NodeType.MODULES, moduleDescriptor, md2 -> resources.getString("requiredModules"), ModulesTreeModel::createRequiresNodes),
+						new Node<>(NodeType.PACKAGES, moduleDescriptor, md2 -> resources.getString("exportedPackages"), ModulesTreeModel::createExportsNodes),
+						new Node<>(NodeType.PACKAGES, moduleDescriptor, md2 -> resources.getString("openedPackages"), ModulesTreeModel::createOpensNodes),
+						new Node<>(NodeType.SERVICES, moduleDescriptor, md2 -> resources.getString("providedServices"), ModulesTreeModel::createProvidesNodes),
+						new Node<>(NodeType.SERVICES, moduleDescriptor, md2 -> resources.getString("usedServices"), ModulesTreeModel::createUsesNodes)
 				));
 	}
 
 	private static Stream<Node<?>> createRequiresNodes(final ModuleDescriptor moduleDescriptor) {
 		log.info(() -> String.format("Reading required modules for module '%s'", moduleDescriptor.name()));
 
-		return moduleDescriptor.requires().stream() //
-				.sorted() //
+		return moduleDescriptor.requires().stream()
+				.sorted()
 				.map(r -> new Node<>(NodeType.MODULE, r, ModuleDescriptor.Requires::name));
 	}
 
 	private static Stream<Node<?>> createExportsNodes(final ModuleDescriptor moduleDescriptor) {
 		log.info(() -> String.format("Reading exported packages for module '%s'", moduleDescriptor.name()));
 
-		return moduleDescriptor.exports().stream() //
-				.sorted() //
+		return moduleDescriptor.exports().stream()
+				.sorted()
 				.map(ModulesTreeModel::createExportsNode);
 	}
 
 	private static Node<ModuleDescriptor.Exports> createExportsNode(final ModuleDescriptor.Exports exports) {
-		return new Node<>(NodeType.PACKAGE, exports, ModuleDescriptor.Exports::source, //
-				e -> Stream.of( //
-						new Node<>(NodeType.PROPERTY, Property.QUALIFIED, p -> p.createName(exports.isQualified())), //
-						new Node<>(NodeType.MODULES, exports.targets(), t -> "for targets",
-								t -> createStringNodes(NodeType.MODULE, t)) //
+		return new Node<>(NodeType.PACKAGE, exports, ModuleDescriptor.Exports::source,
+				e -> Stream.of(
+						new Node<>(NodeType.PROPERTY, Property.QUALIFIED, p -> p.createName(exports.isQualified())),
+						new Node<>(NodeType.MODULES, exports.targets(), t -> resources.getString("targets"), t -> createStringNodes(NodeType.MODULE, t))
 				));
 	}
 
 	private static Stream<Node<?>> createOpensNodes(final ModuleDescriptor moduleDescriptor) {
 		log.info(() -> String.format("Reading opened packages for module '%s'", moduleDescriptor.name()));
 
-		return moduleDescriptor.opens().stream() //
-				.sorted() //
+		return moduleDescriptor.opens().stream()
+				.sorted()
 				.map(ModulesTreeModel::createOpensNode);
 	}
 
 	private static Node<ModuleDescriptor.Opens> createOpensNode(final ModuleDescriptor.Opens opens) {
-		return new Node<>(NodeType.PACKAGE, opens, ModuleDescriptor.Opens::source, //
-				e -> Stream.of( //
-						new Node<>(NodeType.PROPERTY, Property.QUALIFIED, p -> p.createName(opens.isQualified())), //
-						new Node<>(NodeType.MODULES, opens.targets(), t -> "for targets",
-								t -> createStringNodes(NodeType.MODULE, t)) //
+		return new Node<>(NodeType.PACKAGE, opens, ModuleDescriptor.Opens::source,
+				e -> Stream.of(
+						new Node<>(NodeType.PROPERTY, Property.QUALIFIED, p -> p.createName(opens.isQualified())),
+						new Node<>(NodeType.MODULES, opens.targets(), t -> resources.getString("targets"), t -> createStringNodes(NodeType.MODULE, t))
 				));
 	}
 
 	private static Stream<Node<?>> createProvidesNodes(final ModuleDescriptor moduleDescriptor) {
 		log.info(() -> String.format("Reading provided services for module '%s'", moduleDescriptor.name()));
 
-		return moduleDescriptor.provides().stream() //
-				.sorted() //
+		return moduleDescriptor.provides().stream()
+				.sorted()
 				.map(ModulesTreeModel::createProvidesNode);
 	}
 
 	private static Node<ModuleDescriptor.Provides> createProvidesNode(final ModuleDescriptor.Provides provides) {
-		return new Node<>(NodeType.INTERFACE, provides, ModuleDescriptor.Provides::service, //
-				e -> Stream.of( //
-						new Node<>(NodeType.CLASSES, provides.providers(), t -> "providers",
-								t -> createStringNodes(NodeType.CLASS, t)) //
+		return new Node<>(NodeType.SERVICE, provides, ModuleDescriptor.Provides::service,
+				e -> Stream.of(
+						new Node<>(NodeType.CLASSES, provides.providers(), t -> resources.getString("providers"), t -> createStringNodes(NodeType.CLASS, t))
 				));
 	}
 
 	private static Stream<Node<?>> createUsesNodes(final ModuleDescriptor moduleDescriptor) {
 		log.info(() -> String.format("Reading used services for module '%s'", moduleDescriptor.name()));
 
-		return createStringNodes(NodeType.INTERFACE, moduleDescriptor.uses());
+		return createStringNodes(NodeType.SERVICE, moduleDescriptor.uses());
 	}
 
 	private static Stream<Node<?>> createStringNodes(final NodeType type, final Collection<String> strings) {
-		return strings.stream() //
-				.sorted() //
+		return strings.stream()
+				.sorted()
 				.map(s -> new Node<>(type, s, String::toString));
 	}
 }

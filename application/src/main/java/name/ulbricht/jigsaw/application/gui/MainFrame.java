@@ -1,7 +1,6 @@
 package name.ulbricht.jigsaw.application.gui;
 
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -11,10 +10,7 @@ import java.io.StringWriter;
 import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import javax.swing.border.EmptyBorder;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -30,6 +26,7 @@ import javax.swing.JTree;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
+import javax.swing.border.EmptyBorder;
 import javax.xml.bind.DataBindingException;
 import javax.xml.bind.JAXB;
 
@@ -38,9 +35,10 @@ import name.ulbricht.jigsaw.application.xml.Persons;
 import name.ulbricht.jigsaw.greetings.Greetings;
 import name.ulbricht.jigsaw.greetings.GreetingsHandler;
 
-public final class MainWindow extends JFrame {
+@SuppressWarnings("serial")
+public final class MainFrame extends JFrame {
 
-	private static final Logger log = Logger.getLogger(MainWindow.class.getPackageName());
+	private static final Logger log = Logger.getLogger(MainFrame.class.getPackageName());
 
 	public static void initialize() {
 		try {
@@ -50,7 +48,7 @@ public final class MainWindow extends JFrame {
 			log.log(Level.SEVERE, ex, ex::getMessage);
 		}
 
-		new MainWindow().setVisible(true);
+		new MainFrame().setVisible(true);
 	}
 
 	private static final class ControlPanel extends JPanel {
@@ -62,37 +60,40 @@ public final class MainWindow extends JFrame {
 		}
 	}
 
-	private MainWindow() {
+	private MainFrame() {
+		final var resources = Resources.of("application");
+
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-		setTitle("Jigsaw Application");
-		setIconImages(IntStream.of(16, 24, 32, 48, 64, 128, 256, 512) //
-			.mapToObj(size -> "app" + size + ".png") //
-			.map(Resources::getImage) //
-			.collect(Collectors.toList()));
-		setBackground(UIManager.getColor("TabbedPane.background"));
+		setTitle(resources.getString("name"));
+		setIconImages(resources.getImages("icons"));
 
-		final var tabbedPane = new JTabbedPane();
-		tabbedPane.addTab("Modules", Resources.getIcon("modules.png"), createModulesComponent());
-		tabbedPane.addTab("Services", Resources.getIcon("interfaces.png"), createServicesComponent());
-		tabbedPane.addTab("JAXB", Resources.getIcon("xml.png"), createJAXBComponent());
-		tabbedPane.addTab("Properties", Resources.getIcon("property.png"), createPropertiesComponent());
+		createContent();
 
-		final var closeButton = new JButton("Close");
-		closeButton.addActionListener(e -> dispose());
-
-		final var buttonPanel = new ControlPanel(new FlowLayout(FlowLayout.RIGHT));
-		buttonPanel.add(closeButton);
-
-		final var contentPane = new ControlPanel(new BorderLayout());
-		contentPane.add(tabbedPane, BorderLayout.CENTER);
-		contentPane.add(buttonPanel, BorderLayout.SOUTH);
-		setContentPane(contentPane);
-
+		getRootPane().setBorder(new EmptyBorder(8, 8, 8, 8));
 		pack();
 		setLocationByPlatform(true);
 	}
 
-	private static JComponent createJAXBComponent() {
+	private void createContent() {
+		final var resources = Resources.of("MainFrame");
+
+		final var tabbedPane = new JTabbedPane();
+		addModulesComponent(tabbedPane);
+		addServicesComponent(tabbedPane);
+		addJAXBComponent(tabbedPane);
+		addPropertiesComponent(tabbedPane);
+
+		final var buttonPanel = new ControlPanel(new BorderLayout());
+		buttonPanel.setBorder(new EmptyBorder(8, 0, 0, 0));
+		buttonPanel.add(createButton(resources.with("closeButton"), this::dispose), BorderLayout.EAST);
+
+		add(tabbedPane, BorderLayout.CENTER);
+		add(buttonPanel, BorderLayout.SOUTH);
+	}
+
+	private static void addJAXBComponent(final JTabbedPane tabbedPane) {
+		final var resources = Resources.of("MainFrame.jaxbTab");
+
 		final var persons = new Persons();
 		persons.getPersons().add(new Person(42, "John", "Smith"));
 		persons.getPersons().add(new Person(43, "Jane", "Miller"));
@@ -109,42 +110,34 @@ public final class MainWindow extends JFrame {
 		final var textArea = new JTextArea(xml);
 		textArea.setEditable(false);
 
-		final var descrLabel = new JLabel("Using the deprected JAXB module:");
-		descrLabel.setLabelFor(textArea);
-
 		final var panel = new ControlPanel(new BorderLayout(0, 8));
-		panel.add(descrLabel, BorderLayout.NORTH);
+		panel.add(createLabelFor(resources.with("descrLabel"), textArea), BorderLayout.NORTH);
 		panel.add(new JScrollPane(textArea), BorderLayout.CENTER);
 
-		return panel;
+		addTab(tabbedPane, resources, panel);
 	}
 
-	@SuppressWarnings("unchecked")
-	private JComponent createServicesComponent() {
+	private void addServicesComponent(final JTabbedPane tabbedPane) {
+		final var resources = Resources.of("MainFrame.servicesTab");
+
 		final var servicesComboBox = new JComboBox<ServiceLoader.Provider<GreetingsHandler>>(new ServiceProviderComboBoxModel());
 		servicesComboBox.setRenderer(new ServiceProviderListCellRenderer<GreetingsHandler>());
 		if (servicesComboBox.getItemCount() > 0) servicesComboBox.setSelectedIndex(0);
 
-		final var servicesLabel = new JLabel("Services:");
-		servicesLabel.setLabelFor(servicesComboBox);
+		final var messageTextField = new JTextField(resources.getString("messageTextField.text"));
 
-		final var messageTextField = new JTextField("Hello World!");
-
-		final var messageLabel = new JLabel("Message:");
-		messageLabel.setLabelFor(messageTextField);
-
-		final var sendButton = new JButton("Send Message");
-		sendButton.addActionListener(e -> ((ServiceProviderComboBoxModel) servicesComboBox.getModel()).getSelectedProvider() //
-			.ifPresent(p -> sendMessage(p, messageTextField.getText())));
+		final var sendButton = createButton(resources.with("sendButton"),
+			()->((ServiceProviderComboBoxModel) servicesComboBox.getModel()).getSelectedProvider()
+				.ifPresent(p -> sendMessage(p, messageTextField.getText())));
 
 		final var panel = new ControlPanel(new GridBagLayout());
-		panel.add(servicesLabel, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
+		panel.add(createLabelFor(resources.with("servicesLabel"), servicesComboBox), new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
 		panel.add(servicesComboBox, new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 0, 0));
-		panel.add(messageLabel, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
+		panel.add(createLabelFor(resources.with("messageLabel"), messageTextField), new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
 		panel.add(messageTextField, new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 0, 0));
 		panel.add(sendButton, new GridBagConstraints(1, 2, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHEAST, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
 
-		return panel;
+		addTab(tabbedPane, resources, panel);
 	}
 
 	private void sendMessage(final ServiceLoader.Provider<GreetingsHandler> serviceProvider, final String message) {
@@ -153,30 +146,44 @@ public final class MainWindow extends JFrame {
 		}
 	}
 
-	private static JComponent createModulesComponent() {
+	private static void addModulesComponent(final JTabbedPane tabbedPane) {
+		final var resources = Resources.of("MainFrame.modulesTab");
+
 		final var tree = new JTree(new ModulesTreeModel());
 		tree.setCellRenderer(new ModulesTreeCellRenderer());
 
-		final var descrLabel = new JLabel("Currently available Java modules:");
-		descrLabel.setLabelFor(tree);
-
 		final var panel = new ControlPanel(new BorderLayout(0, 8));
-		panel.add(descrLabel, BorderLayout.NORTH);
+		panel.add(createLabelFor(resources.with("descrLabel"), tree), BorderLayout.NORTH);
 		panel.add(new JScrollPane(tree), BorderLayout.CENTER);
 
-		return panel;
+		addTab(tabbedPane, resources, panel);
 	}
 
-	private static JComponent createPropertiesComponent() {
+	private static void addPropertiesComponent(final JTabbedPane tabbedPane) {
+		final var resources = Resources.of("MainFrame.propertiesTab");
+
 		final var table = new JTable(new SystemPropertiesTableModel());
 
-		final var descrLabel = new JLabel("Currenty set Java system properties:");
-		descrLabel.setLabelFor(table);
-
 		final var panel = new ControlPanel(new BorderLayout(0, 8));
-		panel.add(descrLabel, BorderLayout.NORTH);
+		panel.add(createLabelFor(resources.with("descrLabel"), table), BorderLayout.NORTH);
 		panel.add(new JScrollPane(table), BorderLayout.CENTER);
 
-		return panel;
+		addTab(tabbedPane, resources, panel);
+	}
+
+	private static JLabel createLabelFor(final Resources resources, final JComponent target) {
+		final var label = new JLabel(resources.getString("text"));
+		label.setLabelFor(target);
+		return label;
+	}
+
+	private static JButton createButton(final Resources resources, final Runnable action) {
+		final var button = new JButton(resources.getString("text"));
+		button.addActionListener(e -> action.run());
+		return button;
+	}
+
+	private static void addTab(final JTabbedPane tabbedPane, final Resources resources, final JComponent content) {
+		tabbedPane.addTab(resources.getString("title"), resources.getIcon("icon"), content);
 	}
 }

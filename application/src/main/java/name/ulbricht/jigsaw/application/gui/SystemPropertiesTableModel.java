@@ -15,6 +15,8 @@ import javax.swing.table.TableModel;
  */
 final class SystemPropertiesTableModel implements TableModel {
 
+	private static final Resources resources = Resources.of("SystemPropertiesTableModel");
+
 	private final EventListenerList eventListeners = new EventListenerList();
 	private final List<String> systemProperties;
 
@@ -39,9 +41,9 @@ final class SystemPropertiesTableModel implements TableModel {
 	public String getColumnName(final int columnIndex) {
 		switch (columnIndex) {
 			case 0 :
-				return "Key";
+				return resources.getString("keyColumn.name");
 			case 1 :
-				return "Value";
+				return resources.getString("valueColumn.name");
 			default :
 				throw new IllegalArgumentException(Integer.toString(columnIndex));
 		}
