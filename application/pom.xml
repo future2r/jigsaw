@@ -1,49 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <parent>
-        <groupId>name.ulbricht.jigsaw</groupId>
-        <artifactId>parent</artifactId>
-        <version>1.0.0</version>
-    </parent>
-
-    <artifactId>application</artifactId>
-
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>name.ulbricht.jigsaw</groupId>
+		<artifactId>parent</artifactId>
+		<version>1.0.0</version>
+	</parent>
+	<artifactId>application</artifactId>
 	<dependencies>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>greetings</artifactId>
-			<version>${project.version}</version>
 		</dependency>
-
 		<!-- JAXB is no part of the JRE anymore, use an alternative -->
-
-		<!-- JAXB API -->
 		<dependency>
 			<groupId>javax.xml.bind</groupId>
 			<artifactId>jaxb-api</artifactId>
-			<version>2.3.0</version>
 		</dependency>
-
-		<!-- module dependecy from JAXB API -->
 		<dependency>
-			<groupId>javax.activation</groupId>
-			<artifactId>javax.activation-api</artifactId>
-			<version>1.2.0</version>
+			<groupId>org.glassfish.jaxb</groupId>
+			<artifactId>jaxb-runtime</artifactId>
 		</dependency>
 	</dependencies>
-
     <build>
 		<plugins>
-
 			<!-- copy the 3rd party dependencies to the release folder to get picked up by jlink later-->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
-				<version>3.1.1</version>
 				<executions>
 					<execution>
 					<id>copy-additional-dependencies</id>
@@ -59,13 +45,10 @@
 				</execution>
 			</executions>
 			</plugin>
-
 			<!-- perform some additional tasks (Maven does not support this yet) -->
 			<plugin>
 				<artifactId>maven-antrun-plugin</artifactId>
-				<version>1.8</version>
 				<executions>
-
 					<!-- patch the module jar to feature a main class and a version number -->
 					<!-- see https://issues.apache.org/jira/browse/MJAR-238 -->
 					<execution>
@@ -77,29 +60,22 @@
 						<configuration>
 							<target>
 								<exec executable="${java.home}/bin/jar" failonerror="true">
-									
 									<!-- update only -->
 									<arg value="--update" />
-
 									<!-- add the main class -->
 									<arg value="--main-class" />
 									<arg value="name.ulbricht.jigsaw.application.Main" />
-
 									<!-- add the version number -->
 									<arg value="--module-version" />
 									<arg value="${project.version}" />
-
 									<!-- file to update -->
 									<arg value="--file" />
-									<arg
-										value="${project.build.directory}/release/${project.artifactId}-${project.version}.jar" />
+									<arg value="${project.build.directory}/release/${project.artifactId}-${project.version}.jar" />
 								</exec>
 							</target>
 						</configuration>
 					</execution>
-
-					<!-- create runimage with a minimal JRE and all required modules and 
-						a launcher "bin/ModularizedApplication" in the "runimage" folder -->
+					<!-- create runimage with a minimal JRE and all required modules and a launcher "bin/ModularizedApplication" in the "runimage" folder -->
 					<!-- see https://maven.apache.org/plugins/maven-jlink-plugin -->
 					<execution>
 						<id>create-jre</id>
@@ -111,23 +87,17 @@
 							<target>
 								<exec executable="${java.home}/bin/jlink"
 									failonerror="true">
-
 									<!-- path to all the modules -->
 									<arg value="--module-path" />
 									<arg value="${project.build.directory}/release;${project.basedir}/../greetings/target/release;${project.basedir}/../console/target/release;${project.basedir}/../msgbox/target/release" />
-
-									<!-- name(s) of root module(s) -->
-									<!-- include those, we have no implicit dependency to -->
+									<!-- name(s) of root module(s), include those we have no implicit dependency to -->
 									<arg value="--add-modules" />
 									<arg value="name.ulbricht.jigsaw.application,name.ulbricht.jigsaw.console,name.ulbricht.jigsaw.msgbox" />
-
 									<!-- target folder for the runimage -->
 									<arg value="--output" />
 									<arg value="${project.build.directory}/runimage" />
-
 									<!-- strip debug information -->
 									<arg value="--strip-debug" />
-
 									<!-- name of the launcher and module to launch -->
 									<arg value="--launcher" />
 									<arg value="JigsawApplication=name.ulbricht.jigsaw.application" />
@@ -137,8 +107,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 		</plugins>
 	</build>
-
 </project>

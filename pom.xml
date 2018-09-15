@@ -3,13 +3,10 @@
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-
 	<packaging>pom</packaging>
-
 	<groupId>name.ulbricht.jigsaw</groupId>
 	<artifactId>parent</artifactId>
 	<version>1.0.0</version>
-
 	<properties>
 		<maven.compiler.release>11</maven.compiler.release>
 		<maven.compiler.source>11</maven.compiler.source>
@@ -18,60 +15,142 @@
 		<maven.compiler.showWarnings>true</maven.compiler.showWarnings>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
-
 	<modules>
 		<module>greetings</module>
 		<module>console</module>
 		<module>msgbox</module>
 		<module>application</module>
 	</modules>
-
+	<dependencyManagement>
+		<dependencies>
+			<!-- share the service API dependency (avoids specifying a version in the modules) -->
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>greetings</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<!-- define APIs removed since Java 11 -->
+			<dependency>
+				<groupId>javax.xml.bind</groupId>
+				<artifactId>jaxb-api</artifactId>
+				<version>2.4.0-b180830.0359</version>
+			</dependency>
+			<dependency>
+				<groupId>org.glassfish.jaxb</groupId>
+				<artifactId>jaxb-runtime</artifactId>
+				<version>2.4.0-b180830.0438</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<build>
-		<plugins>
-					
-			<!-- Use newer version of compiler to ensure the module dependency is found -->
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.0</version>
-			</plugin>
+		<!-- define shared plugin settings -->
+	    <pluginManagement>
+			<plugins>
+				<!-- Use "mvn versions:display-plugin-updates" to display newer plugin version -->
+				<!-- Use "mvn versions:display-dependency-updates" to display newer dependency versions -->
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>versions-maven-plugin</artifactId>
+					<version>2.5</version>
+					<configuration>
+  		      			<generateBackupPoms>false</generateBackupPoms>
+					</configuration>
+				</plugin>
 
-			<!-- minimum requirements for Java and Maven -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-enforcer-plugin</artifactId>
-				<version>3.0.0-M2</version>
-				<executions>
-					<execution>
-						<id>enforce-tooling-versions</id>
-						<goals>
-							<goal>enforce</goal>
-						</goals>
-						<configuration>
-							<rules>
-								<requireMavenVersion>
-									<version>[3.5.3,)</version>
-								</requireMavenVersion>
-								<requireJavaVersion>
-									<version>11</version>
-								</requireJavaVersion>
-							</rules>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
-			<!-- create the modules in the "release" folder to avoid conflicts with 
-				"exploded" classes (same module twice in one directory) -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.1.0</version>
-				<configuration>
-					<outputDirectory>${project.build.directory}/release</outputDirectory>
-				</configuration>
-			</plugin>
-
-		</plugins>
+				<!-- minimum requirements for Java and Maven -->
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-enforcer-plugin</artifactId>
+					<version>3.0.0-M2</version>
+					<executions>
+						<execution>
+							<id>enforce-tooling-versions</id>
+							<goals>
+								<goal>enforce</goal>
+							</goals>
+							<configuration>
+								<rules>
+									<requireMavenVersion>
+										<version>3.5</version>
+									</requireMavenVersion>
+									<requireJavaVersion>
+										<version>11</version>
+									</requireJavaVersion>
+								</rules>
+							</configuration>
+						</execution>
+					</executions>
+				</plugin>
+				<!-- define plugin version to make the build stable -->
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-clean-plugin</artifactId>
+					<version>3.1.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.8.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>3.1.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>3.1.0</version>
+					<configuration>
+						<!-- create the modules in the "release" folder to avoid conflicts with 
+							"exploded" classes (same module twice in one directory) -->
+						<outputDirectory>${project.build.directory}/release</outputDirectory>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>2.22.0</version>
+					<configuration>
+						<!-- allow all reflection access for third party libraries (until there are updated) -->
+						<argLine>--illegal-access=permit</argLine>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-failsafe-plugin</artifactId>
+					<version>2.22.0</version>
+					<configuration>
+						<!-- allow all reflection access for third party libraries (until there are updated) -->
+						<argLine>--illegal-access=permit</argLine>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-site-plugin</artifactId>
+					<version>3.7.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-dependency-plugin</artifactId>
+					<version>3.1.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-antrun-plugin</artifactId>
+					<version>1.8</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-install-plugin</artifactId>
+					<version>2.5.2</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-deploy-plugin</artifactId>
+					<version>2.8.2</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 	</build>
-
 </project>
